@@ -62,10 +62,12 @@ class rangeData implements ILine2DEquation{
 class Graph {
   public Graph2D chart;
   public ArrayList<rangeData> data;
+  public String name;
   
-  Graph(Graph2D chart, ArrayList<rangeData> data) {
+  Graph(Graph2D chart, ArrayList<rangeData> data, String name) {
     this.chart = chart;
     this.data = data;
+    this.name = name;
   }
 }
 
@@ -92,15 +94,15 @@ void setup(){
   
   for(int ii=0; ii < power_graphs.length; ii++)
   {
-    power_graphs[ii] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
+    power_graphs[ii] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Power " + (1+ii));
   }
   
-  for(int ii=0; ii < sus_graphs.length; ii++)
-  {
-    sus_graphs[ii] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
-  }
+  sus_graphs[0] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Front left");
+  sus_graphs[1] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Front right");
+  sus_graphs[2] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Rear left");
+  sus_graphs[3] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Rear right");
   
-  temp = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
+  temp = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Temperature (F)");
 
   int ii = 0;
   for(Graph g: power_graphs){
@@ -120,7 +122,7 @@ void setup(){
     g.chart.setXAxisMin(0f);
     g.chart.setFontColour(255, 255, 255);
     g.chart.setXAxisLabel("Time (s)");
-    g.chart.setYAxisLabel("Power " + (1 + ii));
+    g.chart.setYAxisLabel(g.name);
     g.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
     ii ++;
   }
@@ -142,7 +144,7 @@ void setup(){
     g.chart.setXAxisMin(0f);
     g.chart.setFontColour(255, 255, 255);
     g.chart.setXAxisLabel("Time (s)");
-    g.chart.setYAxisLabel("Suspension " + (1 + ii));
+    g.chart.setYAxisLabel(g.name);
     g.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
     ii ++;
   }
@@ -163,7 +165,7 @@ void setup(){
     temp.chart.setXAxisMin(0f);
     temp.chart.setFontColour(255, 255, 255);
     temp.chart.setXAxisLabel("Time (s)");
-    temp.chart.setYAxisLabel("Temperature (C) " + (1 + ii));
+    temp.chart.setYAxisLabel(temp.name);
     temp.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
 }
 
