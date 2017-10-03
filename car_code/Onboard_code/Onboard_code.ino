@@ -32,15 +32,20 @@ void loop() {
 
 void printData() {
   String printString = "";
-  printString = printString + readTemperature() + ",";
-  
   for(int ii = 0; ii < sizeof(voltagePins)/sizeof(int); ii++) {
     printString = printString + readVoltage(voltagePins[ii], voltageOffsets[ii]) + ",";
+  }
+
+  for(int ii = 0; ii < sizeof(voltagePins)/sizeof(int); ii++) {
+    printString = printString + readCurrent(currentPins[ii], currentOffsets[ii]) + ",";
   }
 
   for(int ii = 0; ii < sizeof(accelPins)/sizeof(int); ii++) {
     printString = printString + readAccel(accelPins[ii], accelOffsets[ii]) + ",";
   }
+
+  printString = printString + readTemperature() + ",";
+
   Serial.println(printString);
   delay(200);
 }
@@ -52,6 +57,11 @@ float readTemperature() {
 }
 
 float readVoltage(int pin, float calConst) {
+  float voltage = analogRead(pin);
+  return voltageCalibR[pin] * voltageCalibS[pin] * voltage - calConst;
+}
+
+float readCurrent(int pin, float calConst) {
   float voltage = analogRead(pin);
   return voltageCalibR[pin] * voltageCalibS[pin] * voltage - calConst;
 }
