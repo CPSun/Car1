@@ -12,6 +12,7 @@ String serialPort = "/dev/tty.usbmodem144231";      // change this to your COM p
 /////////////////////////////////////////////////////////////
 //////////////////////  variables ///////////////////////////
 /////////////////////////////////////////////////////////////
+PrintWriter file;
 
 Serial myPort;
 
@@ -62,17 +63,17 @@ class rangeData implements ILine2DEquation{
 class Graph {
   public Graph2D chart;
   public ArrayList<rangeData> data;
-  public String name;
   
-  Graph(Graph2D chart, ArrayList<rangeData> data, String name) {
+  Graph(Graph2D chart, ArrayList<rangeData> data) {
     this.chart = chart;
     this.data = data;
-    this.name = name;
   }
 }
 
 void setup(){
   println("setting up");
+  file = createWriter("log.txt"); 
+  file.println("test");  // Write the coordinate to the file
   size(1100,800, P3D);
   surface.setResizable(true);
   stroke(0,0,0);
@@ -94,15 +95,15 @@ void setup(){
   
   for(int ii=0; ii < power_graphs.length; ii++)
   {
-    power_graphs[ii] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Power " + (1+ii));
+    power_graphs[ii] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
   }
   
-  sus_graphs[0] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Front left");
-  sus_graphs[1] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Front right");
-  sus_graphs[2] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Rear left");
-  sus_graphs[3] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Rear right");
+  for(int ii=0; ii < sus_graphs.length; ii++)
+  {
+    sus_graphs[ii] = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
+  }
   
-  temp = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>(), "Temperature (F)");
+  temp = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
 
   int ii = 0;
   for(Graph g: power_graphs){
@@ -122,7 +123,7 @@ void setup(){
     g.chart.setXAxisMin(0f);
     g.chart.setFontColour(255, 255, 255);
     g.chart.setXAxisLabel("Time (s)");
-    g.chart.setYAxisLabel(g.name);
+    g.chart.setYAxisLabel("Power " + (1 + ii));
     g.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
     ii ++;
   }
@@ -144,7 +145,7 @@ void setup(){
     g.chart.setXAxisMin(0f);
     g.chart.setFontColour(255, 255, 255);
     g.chart.setXAxisLabel("Time (s)");
-    g.chart.setYAxisLabel(g.name);
+    g.chart.setYAxisLabel("Suspension " + (1 + ii));
     g.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
     ii ++;
   }
@@ -165,7 +166,7 @@ void setup(){
     temp.chart.setXAxisMin(0f);
     temp.chart.setFontColour(255, 255, 255);
     temp.chart.setXAxisLabel("Time (s)");
-    temp.chart.setYAxisLabel(temp.name);
+    temp.chart.setYAxisLabel("Temperature (C) " + (1 + ii));
     temp.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
 }
 
@@ -195,16 +196,19 @@ void serialEvent(Serial p) {
   print(p);
   inString = (myPort.readString());
   println(inString);  
+  file.println(inString);
   
   try {
     //Parse the data
     String[] dataStrings = split(inString, ',');
     printArray(dataStrings);
     println(dataStrings.length);
+    int index = 0;
     for(Graph g: power_graphs) {
       g.data.get(0).setCurVal(float(dataStrings[0]));
     }
     
+    index = 0;
     for(Graph g: sus_graphs) {
       g.data.get(0).setCurVal(float(dataStrings[1]));
     }
