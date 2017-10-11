@@ -36,9 +36,9 @@ int susMax = 500;
 
 int susMin = 200;
 
-int tempMax = 500;
+int tempMax = 200;
 
-int tempMin = 200;
+int tempMin = 50;
 
 /////////////////////////////////////////////////////////////
 ///////// class needed for the timeseries graph /////////////
@@ -73,7 +73,7 @@ class Graph {
 void setup(){
   println("setting up");
   file = createWriter("log.txt"); 
-  file.println("test");  // Write the coordinate to the file
+  file.println("test2");  // Write the coordinate to the file
   size(1100,800, P3D);
   surface.setResizable(true);
   stroke(0,0,0);
@@ -197,6 +197,7 @@ void serialEvent(Serial p) {
   inString = (myPort.readString());
   println(inString);  
   file.println(inString);
+  file.close();
   
   try {
     //Parse the data
@@ -205,17 +206,24 @@ void serialEvent(Serial p) {
     println(dataStrings.length);
     int index = 0;
     for(Graph g: power_graphs) {
-      g.data.get(0).setCurVal(float(dataStrings[0]));
+      g.data.get(0).setCurVal(float(dataStrings[index]));
+      index++;
     }
     
     index = 0;
     for(Graph g: sus_graphs) {
-      g.data.get(0).setCurVal(float(dataStrings[1]));
+      g.data.get(0).setCurVal(float(dataStrings[index + power_graphs.length]));
+      index++;
     }
     
-    temp.data.get(0).setCurVal(float(dataStrings[2]));
+    temp.data.get(0).setCurVal(float(dataStrings[power_graphs.length + sus_graphs.length]));
                 
   } catch (Exception e) {
       println("Error while reading serial data. " + e);
   }
+}
+
+void stop() {
+  file.flush();
+  file.close();
 }

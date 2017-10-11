@@ -1,4 +1,4 @@
-float arduinoVoltage = 5;
+float arduinoVoltage = 5.04;
 
 float tempScale = arduinoVoltage/1024.0;
 
@@ -33,11 +33,8 @@ void loop() {
 void printData() {
   String printString = "";
   for(int ii = 0; ii < sizeof(voltagePins)/sizeof(int); ii++) {
-    printString = printString + readVoltage(voltagePins[ii], voltageOffsets[ii]) + ",";
-  }
-
-  for(int ii = 0; ii < sizeof(voltagePins)/sizeof(int); ii++) {
-    printString = printString + readCurrent(currentPins[ii], currentOffsets[ii]) + ",";
+    printString = printString + readCurrent(currentPins[ii], currentOffsets[ii]) *
+    readVoltage(voltagePins[ii], voltageOffsets[ii]) + ",";
   }
 
   for(int ii = 0; ii < sizeof(accelPins)/sizeof(int); ii++) {
@@ -46,7 +43,7 @@ void printData() {
 
   printString = printString + readTemperature() + ",";
 
-  Serial.println(printString);
+  Serial.println(printString.substring(0, printString.length() - 2));
   delay(200);
 }
 
