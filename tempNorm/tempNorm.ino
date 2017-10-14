@@ -7,7 +7,7 @@ int tempScale = 1;
 
 int tempCalibS = 1;
 
-int tempOffset = 1;
+int tempOffset = 0;
 void setup() {
   // put your setup code here, to run once:
 }
