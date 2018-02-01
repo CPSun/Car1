@@ -22,6 +22,12 @@ Graph[] sus_graphs = new Graph[4];
 
 Graph temp;
 
+///SHUTDOWN BUTTON
+int shutdownX = 0;
+int shutdownY = 675;
+int shutdownH = 125;
+int shutdownW = 500;
+
 int     lf = 10;       //ASCII linefeed
 String  inString;      //String for testing serial communication
 int[] rgb_color = {0, 0, 255, 0, 160, 122, 0, 255, 0, 255};
@@ -104,7 +110,7 @@ void setup(){
   }
   
   temp = new Graph(new Graph2D(this, 400, 75, false), new ArrayList<rangeData>());
-
+  
   int ii = 0;
   for(Graph g: power_graphs){
     rangeData r = new rangeData();
@@ -172,13 +178,12 @@ void setup(){
 
 void draw(){
     background(0, 0, 0);
-       
     // show some text
     fill(0, 0, 0);
     text("(c) Pozyx Labs", width - 100, 20);
     text("Calibration status:", 550, 730);
     text(calib_status, 550, 750);   
-       
+    
     // draw the graphs
     for(Graph g: power_graphs) {
       g.chart.draw();
@@ -189,9 +194,23 @@ void draw(){
     }
     
     temp.chart.draw();
+    if(mouseX > shutdownX && mouseX < (shutdownX + shutdownW) && mouseY > shutdownY && mouseY < (shutdownY + shutdownH)) {
+      fill(220,20,60); 
+    } else{
+      fill(255,255,255);
+    }
+    rect(shutdownX, shutdownY, shutdownW, shutdownH);
+    fill(0,0,0);
+    textSize(40);
+    text("SHUT DOWN", 120, 750);
 }
 
-
+void mouseClicked() {
+  if(mouseX > shutdownX && mouseX < (shutdownX + shutdownW) && mouseY > shutdownY && mouseY < (shutdownY + shutdownH)) {
+      println("SHUT DOWN");
+  } 
+}
+ 
 void serialEvent(Serial p) {
   print(p);
   inString = (myPort.readString());
@@ -223,7 +242,9 @@ void serialEvent(Serial p) {
   }
 }
 
-void stop() {
+void exit() {
+  print("HERE");
   file.flush();
   file.close();
+  super.exit();
 }
