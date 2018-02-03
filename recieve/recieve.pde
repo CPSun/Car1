@@ -4,6 +4,11 @@ import org.gwoptics.graphics.graph2D.backgrounds.*;
 import org.gwoptics.graphics.GWColour;
 import processing.serial.*;
 import java.lang.Math.*;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
+PFont font;
 
 boolean serial = true;          // set to true to use Serial, false to use OSC messages.
 
@@ -13,6 +18,8 @@ String serialPort = "/dev/tty.usbmodem144231";      // change this to your COM p
 //////////////////////  variables ///////////////////////////
 /////////////////////////////////////////////////////////////
 PrintWriter file;
+
+PrintWriter summary;
 
 Serial myPort;
 
@@ -46,6 +53,19 @@ int tempMax = 200;
 
 int tempMin = 50;
 
+
+int dataPoints = 0;
+
+Date start;
+
+Event hottest;
+Event coolest; 
+double avgTemp = 0;
+
+Event powerH;
+Event powerL; 
+double powerAvg = 0;
+
 /////////////////////////////////////////////////////////////
 ///////// class needed for the timeseries graph /////////////
 /////////////////////////////////////////////////////////////
@@ -77,15 +97,17 @@ class Graph {
 }
 
 void setup(){
-  println("setting up");
-  file = createWriter("log.txt"); 
-  file.println("test2");  // Write the coordinate to the file
+  font = createFont("font.otf", 34);
+  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
+  start = new Date();
+  file = createWriter("tests/" + dateFormat.format(start) + "/data.txt"); 
+  summary = createWriter("tests/" + dateFormat.format(start) + "/summary.txt");
+  summary.println("Test: " + new SimpleDateFormat("yyyy/MM/dd' T 'HH:mm:ss").format(new Date()));
   size(1100,800, P3D);
   surface.setResizable(true);
   stroke(0,0,0);
   colorMode(RGB, 256); 
  
-  // List all the available serial ports
 
   if(serial){
     try{
@@ -172,18 +194,17 @@ void setup(){
     temp.chart.setXAxisMin(0f);
     temp.chart.setFontColour(255, 255, 255);
     temp.chart.setXAxisLabel("Time (s)");
-    temp.chart.setYAxisLabel("Temperature (C) " + (1 + ii));
+    temp.chart.setYAxisLabel("Temperature (C)");
     temp.chart.setBackground(new SolidColourBackground(new GWColour(1f, 1f, 1f)));
 }
 
 void draw(){
     background(0, 0, 0);
     // show some text
+    fill(100,100,100);
+    textFont(font);
+    text("PROVE", 740, 770);
     fill(0, 0, 0);
-    text("(c) Pozyx Labs", width - 100, 20);
-    text("Calibration status:", 550, 730);
-    text(calib_status, 550, 750);   
-    
     // draw the graphs
     for(Graph g: power_graphs) {
       g.chart.draw();
@@ -201,50 +222,93 @@ void draw(){
     }
     rect(shutdownX, shutdownY, shutdownW, shutdownH);
     fill(0,0,0);
-    textSize(40);
     text("SHUT DOWN", 120, 750);
 }
 
 void mouseClicked() {
   if(mouseX > shutdownX && mouseX < (shutdownX + shutdownW) && mouseY > shutdownY && mouseY < (shutdownY + shutdownH)) {
-      println("SHUT DOWN");
+      EMGSTOP();
   } 
 }
  
 void serialEvent(Serial p) {
   print(p);
   inString = (myPort.readString());
-  println(inString);  
+  println("SERIAL " + inString);  
   file.println(inString);
   file.close();
   
   try {
     //Parse the data
     String[] dataStrings = split(inString, ',');
-    printArray(dataStrings);
-    println(dataStrings.length);
-    int index = 0;
-    for(Graph g: power_graphs) {
-      g.data.get(0).setCurVal(float(dataStrings[index]));
-      index++;
+    if (dataStrings.length == 10) {
+      dataPoints ++;
+      int index = 0;
+      for(Graph g: power_graphs) {
+        g.data.get(0).setCurVal(float(dataStrings[index]));
+        index++;
+      }
+      
+      index = 0;
+      for(Graph g: sus_graphs) {
+        g.data.get(0).setCurVal(float(dataStrings[index + power_graphs.length]));
+        index++;
+      }
+      
+      temp.data.get(0).setCurVal(float(dataStrings[index]));
+      avgTemp += float(dataStrings[index]);
+      if(coolest == null || coolest.getData() > float(dataStrings[index]))
+        coolest.setData(float(dataStrings[index]));
+      if(hottest == null || hottest.getData() < float(dataStrings[index]))
+        hottest.setData(float(dataStrings[index]));
     }
-    
-    index = 0;
-    for(Graph g: sus_graphs) {
-      g.data.get(0).setCurVal(float(dataStrings[index + power_graphs.length]));
-      index++;
-    }
-    
-    temp.data.get(0).setCurVal(float(dataStrings[power_graphs.length + sus_graphs.length]));
-                
   } catch (Exception e) {
       println("Error while reading serial data. " + e);
   }
 }
+void EMGSTOP() {
+   println("EMG STOP");
+   summary.println("EMG STOP AT " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+}
 
 void exit() {
-  print("HERE");
+  print("Exiting");
   file.flush();
   file.close();
+  summary.println(coolest != null? coolest.getEvent() : null);
+  summary.println(hottest != null ? hottest.getEvent() : null);
+  summary.println("Average temperature: " + avgTemp / dataPoints);
+  summary.println("Test stopped at " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+  summary.println("Test duration: " + -.001 * (start.getTime() - new Date().getTime()) + " seconds");
+  summary.flush();
+  summary.close();
   super.exit();
+}
+
+interface Event {
+   String getEvent();
+   float getData();
+   void setData(float data);
+}
+
+class tempEvent implements Event{
+   private float data;
+   private Date date;
+   
+   public void setData(float data) {
+     this.data = data;
+   }
+   
+   public float getData() {
+     return this.data;
+   }
+   
+   tempEvent(Float data) {
+      this.data = data;
+      this.date = new Date();
+   }
+   
+   public String getEvent() {
+      return "Reached " + this.data + " at " + new SimpleDateFormat("HH:mm:ss").format(this.date); 
+   }
 }
