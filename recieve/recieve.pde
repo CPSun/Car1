@@ -113,11 +113,12 @@ void setup(){
     try{
       printArray(Serial.list());
       // Open the port you are using at the rate you want:
-      myPort = new Serial(this, Serial.list()[7], 9600);
+      myPort = new Serial(this, Serial.list()[5], 9600);
       myPort.clear();
       myPort.bufferUntil(lf);
     }catch(Exception e){
       println("Cannot open serial port.");
+      print(e);
     }
   }
   
@@ -231,8 +232,9 @@ void mouseClicked() {
   } 
 }
  
-void serialEvent(Serial p) {
-  print(p);
+void serialEvent(Serial myPort) {
+  print("HERE");
+  print(myPort);
   inString = (myPort.readString());
   println("SERIAL " + inString);  
   file.println(inString);
@@ -266,6 +268,7 @@ void serialEvent(Serial p) {
       println("Error while reading serial data. " + e);
   }
 }
+
 void EMGSTOP() {
    println("EMG STOP");
    summary.println("EMG STOP AT " + new SimpleDateFormat("HH:mm:ss").format(new Date()));

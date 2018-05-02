@@ -1,0 +1,7 @@
+Test: 2018/02/20 T 18:58:40
+EMG STOP AT 18:59:08
+null
+null
+Average temperature: NaN
+Test stopped at 19:05:27
+Test duration: 407.45303 seconds
