@@ -12,7 +12,7 @@ PFont font;
 
 boolean serial = true;          // set to true to use Serial, false to use OSC messages.
 
-String serialPort = "/dev/tty.usbmodem144231";      // change this to your COM port 
+String serialPort = "/dev/cu.usbserial-A5056WMY";      // change this to your COM port 
 
 /////////////////////////////////////////////////////////////
 //////////////////////  variables ///////////////////////////
@@ -20,6 +20,8 @@ String serialPort = "/dev/tty.usbmodem144231";      // change this to your COM p
 PrintWriter file;
 
 PrintWriter summary;
+
+boolean testing; 
 
 Serial myPort;
 
@@ -97,6 +99,7 @@ class Graph {
 }
 
 void setup(){
+  this.testing = false;
   font = createFont("font.otf", 34);
   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
   start = new Date();
@@ -113,9 +116,9 @@ void setup(){
     try{
       printArray(Serial.list());
       // Open the port you are using at the rate you want:
-      myPort = new Serial(this, Serial.list()[5], 9600);
+      myPort = new Serial(this, serialPort, 9600);
       myPort.clear();
-      myPort.bufferUntil(lf);
+      //myPort.bufferUntil(lf);
     }catch(Exception e){
       println("Cannot open serial port.");
       print(e);
@@ -223,23 +226,20 @@ void draw(){
     }
     rect(shutdownX, shutdownY, shutdownW, shutdownH);
     fill(0,0,0);
-    text("SHUT DOWN", 120, 750);
+    text(this.testing ? "STOP" : "START", 120, 750);
 }
 
 void mouseClicked() {
   if(mouseX > shutdownX && mouseX < (shutdownX + shutdownW) && mouseY > shutdownY && mouseY < (shutdownY + shutdownH)) {
       EMGSTOP();
+      myPort.write(22);
   } 
 }
  
 void serialEvent(Serial myPort) {
-  print("HERE");
-  print(myPort);
   inString = (myPort.readString());
-  println("SERIAL " + inString);  
-  file.println(inString);
   file.close();
-  
+  println(inString);
   try {
     //Parse the data
     String[] dataStrings = split(inString, ',');
@@ -270,8 +270,9 @@ void serialEvent(Serial myPort) {
 }
 
 void EMGSTOP() {
-   println("EMG STOP");
-   summary.println("EMG STOP AT " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+   //println("EMG STOP");
+   //summary.println("EMG STOP AT " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+   this.testing = !this.testing;
 }
 
 void exit() {
