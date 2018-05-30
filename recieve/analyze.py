@@ -1,7 +1,7 @@
 import csv
 import matplotlib.pyplot as plot
 
-with open('/Users/milescobb/PROVE/Car1/recieve/tests/18-05-22/20-17-42.csv', newline='') as csvfile:
+with open('tests/18-05-22/20-17-42.csv', newline='') as csvfile:
    data = csv.reader(csvfile, delimiter=' ', quotechar='|')
    run = []
    for row in data:
