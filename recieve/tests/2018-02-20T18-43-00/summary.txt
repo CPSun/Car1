@@ -1,6 +1,0 @@
-Test: 2018/02/20 T 18:43:00
-null
-null
-Average temperature: NaN
-Test stopped at 18:43:32
-Test duration: 32.47 seconds

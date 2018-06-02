@@ -23,17 +23,17 @@ def writeData(pipe, file):
       ardino.reset_input_buffer()
       while(pipe.empty() and not paused):
          ardino_data = ardino.read(16)
-         vn_data = vn.next_data()
-         (v1, v2, v3, v4, c1, c2, c3, c4)= struct.unpack("hhhhhhhh", ardino_data)
-         print(v1, v2, v3, v4)
+         (v1, v2, v3, v4, c1, c2, c3, c4) = struct.unpack("hhhhhhhh", ardino_data)
+         lla_data = vn.read_gps_solution_lla().lla
+         lat = lla_data.x
+         lng = lla_data.y
+         temp = vn.read_imu_measurements().temp
+         acc = vn.read_acceleration_measurements().z
+         vel = vn.read_ins_solution_ecef().velocity.z
+         xb.write(struct.pack("hhhhhhhhfffff", v1, v2, v3, v4, c1, c2, c3, c4,
+            lat, lng, temp, acc, vel))
          file.writerow([v1, v2, v3, v4, c1, c2, c3, c4,
-            vn_data.position_estimated_lla.x, 
-            vn_data.position_estimated_lla.y, 
-            vn_data.position_estimated_lla.z])
-         xb.write(struct.pack("hhhhhhhhfff", v1, v2, v3, v4, c1, c2, c3, c4,
-            vn_data.position_estimated_lla.x, 
-            vn_data.position_estimated_lla.y, 
-            vn_data.position_estimated_lla.z))
+            lat, lng, temp, acc, vel])
       command = pipe.get()
       print("Recieved a " + str(command))
       if(command == 0):
@@ -52,7 +52,8 @@ def writeData(pipe, file):
                paused = False
                active = False
 
-vn = EzAsyncData.connect('/dev/ttyUSB0', 115200)
+vn = VnSensor()
+vn.connect('/dev/ttyUSB0', 115200)
 
 xb = serial.Serial('/dev/ttyUSB1', 9600)
 
@@ -66,7 +67,7 @@ calibz = 0
 print("CALIBRATING")
 
 while(i < 10):
-   vnData = vn.next_data().yaw_pitch_roll
+   vnData = vn.read_yaw_pitch_roll()
    calibx += vnData.x
    caliby += vnData.y
    calibz += vnData.z

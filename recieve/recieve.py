@@ -36,14 +36,15 @@ def stop(event):
 
 def listen(file):
    while(True):
-      data = xb.read(28)
-      data = (struct.unpack("hhhhhhhhfff", data))
+      data = xb.read(36)
+      data = (struct.unpack("hhhhhhhhfffff", data))
       g = globals()['data']
       for i in range(8):
          g[i].append(data[i])
       globals()['data'] = g
       file.writerow(data)
       print(data)
+      
 
 ax = plot.axes([0.6, 0.05, 0.1, 0.075])
 button = Button(ax, 'Stop')
@@ -54,7 +55,7 @@ button2.on_clicked(start)
 for i in range(2, 9):
    axis.append(fig.add_subplot(5,2,i, sharex=axis[0], sharey=axis[0]))
 
-globals()['data'] = [[],[],[],[],[],[],[],[]]
+globals()['data'] = [[],[],[],[],[],[],[],[], [], [], [], [], []]
 
 def animate(i, pipe):
    data = globals()["data"]

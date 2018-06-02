@@ -1,4 +1,4 @@
-import csv
+import csv 
 import matplotlib.pyplot as plot
 
 with open('tests/18-05-22/20-17-42.csv', newline='') as csvfile:
