@@ -18,9 +18,19 @@ import os.path
 
 vn = VnSensor()
 vn.connect('/dev/ttyUSB0', 115200)
-while(1):
-   # print(vn.read_acceleration_measurements())
-   # print(vn.read_yaw_pitch_roll())
-   # print(vn.read_gps_solution_lla().lla)
-   # print(vn.read_imu_measurements().temp)
-   print(vn.read_ins_solution_ecef().velocity.z)
+
+# frame = vn.read_reference_frame_rotation()
+# frame.e00 = 0
+# frame.e01 = 0
+# frame.e02 = 1
+# frame.e10 = 0
+# frame.e11 = 1
+# frame.e12 = 0
+# frame.e20 = -1
+# frame.e21 = 0
+# frame.e22 = 0
+# vn.write_reference_frame_rotation(frame)
+
+
+while True:
+   print(vn.read_yaw_pitch_roll())

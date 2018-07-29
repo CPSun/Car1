@@ -8,6 +8,7 @@ import time
 import queue
 import csv
 import os.path
+import RPi.GPIO as GPIO
 
 # STATUS
 #  0  exit program
@@ -15,24 +16,59 @@ import os.path
 #  2  pause 
 #  3  Start
 
+#  GPIO 3 = flap down
+#  GIPO 2 = flap up
+
+CRITICAL_FLAP_ANGLE = 3
+
+#thread compares VN value to previous readings to determine lift angle
+def checkFlap(vn, arduino):
+   calib = 0
+   for i in range(100):
+      reading = vn.read_yaw_pitch_roll().z * -1
+      print(reading)
+      calib += reading
+   calib /= 100
+   print(calib)
+   while(True):
+      # print(vn.read_ins_solution_ecef().velocity)
+      reading = vn.read_yaw_pitch_roll().z * -1 - calib
+      print(reading)
+      if(reading > CRITICAL_FLAP_ANGLE):
+         print("HERE")
+         GPIO.output(3, GPIO.LOW)
+         GPIO.output(2, GPIO.HIGH)
+         time.sleep(1)
+         GPIO.output(3, GPIO.LOW)
+         GPIO.output(2, GPIO.LOW)
+
+#Gets the sum of values inclusive of start
+def arrsum(arr, start, end):
+   sum = 0
+   for i in range(start, end):
+      sum += arr[i]
+   return sum / (end - start)
+
+#Thread for testing and writing data
 def writeData(pipe, file):
    print("Thread started")
    active = True
    paused = False
    while(active):
-      ardino.reset_input_buffer()
+      arduino.reset_input_buffer()
       while(pipe.empty() and not paused):
-         ardino_data = ardino.read(16)
+         ardino_data = arduino.read(16)
          (v1, v2, v3, v4, c1, c2, c3, c4) = struct.unpack("hhhhhhhh", ardino_data)
          lla_data = vn.read_gps_solution_lla().lla
          lat = lla_data.x
          lng = lla_data.y
          temp = vn.read_imu_measurements().temp
-         acc = vn.read_acceleration_measurements().z
-         vel = vn.read_ins_solution_ecef().velocity.z
-         xb.write(struct.pack("hhhhhhhhfffff", v1, v2, v3, v4, c1, c2, c3, c4,
+         acc = vn.read_acceleration_measurements().y
+         vel = vn.read_ins_solution_ecef().velocity.y
+         time = vn.read_ins_solution_ecef().time
+         xb.write(struct.pack("fhhhhhhhhfffff", time, v1, v2, v3, v4, c1, c2, c3, c4,
             lat, lng, temp, acc, vel))
-         file.writerow([v1, v2, v3, v4, c1, c2, c3, c4,
+         file.writerow([time, v1, v2, v3, v4, c1, c2, c3, c4,
             lat, lng, temp, acc, vel])
       command = pipe.get()
       print("Recieved a " + str(command))
@@ -57,30 +93,31 @@ vn.connect('/dev/ttyUSB0', 115200)
 
 xb = serial.Serial('/dev/ttyUSB1', 9600)
 
-ardino = serial.Serial('/dev/ttyACM0', 9600)
+arduino = serial.Serial('/dev/ttyACM0', 9600)
 
+#Sets up GPIO
+GPIO.setmode(GPIO.BCM)
+
+GPIO.setup(2, GPIO.OUT)
+GPIO.setup(3, GPIO.OUT)
+
+GPIO.output(3, GPIO.HIGH)
+GPIO.output(2, GPIO.LOW)
+time.sleep(3)
+GPIO.output(3, GPIO.LOW)
+GPIO.output(2, GPIO.LOW)
 pipe = queue.Queue()
-i = 0
-calibx = 0
-caliby = 0
-calibz = 0
-print("CALIBRATING")
-
-while(i < 10):
-   vnData = vn.read_yaw_pitch_roll()
-   calibx += vnData.x
-   caliby += vnData.y
-   calibz += vnData.z
-   print(i)
-   i+=1
-
-calibx = calibx / 10
-caliby = caliby / 10
-calibz = calibz / 10
-print("DONE")
 
 testing = False
 i = 0
+
+
+#stats thread to monitor flap
+flapThread = threading.Thread(target=checkFlap, args=(vn, arduino))
+flapThread.start()
+
+
+# finds a new file name
 while(os.path.isfile("test"+str(i) + '.csv')):
    i+=1
 with open('test'+str(i)+'.csv', 'w', newline='') as csvfile:
@@ -88,7 +125,6 @@ with open('test'+str(i)+'.csv', 'w', newline='') as csvfile:
    while(True):
       reading = xb.read(1)
       (value,) = struct.unpack('c', reading)
-      print(int(reading))
       value = 3
       if(int(value) == 3 and not testing):
          tell = threading.Thread(target=writeData, args=(pipe,dataFile))
